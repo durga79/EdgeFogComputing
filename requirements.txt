@@ -1,0 +1,22 @@
+# Edge-Fog Computing Task Offloading System Dependencies
+
+# Java Dependencies (managed by Maven)
+# See pom.xml for detailed version information
+
+# Core Dependencies
+java>=11.0.0
+maven>=3.6.0
+
+# Libraries
+jfuzzylite>=6.0.1  # Fuzzy logic implementation
+commons-math3>=3.6.1  # Statistical calculations
+jfreechart>=1.5.3  # Visualization
+
+# Development Tools
+junit>=4.13.2  # Testing
+
+# How to set up the environment:
+# 1. Install Java JDK 11 or higher
+# 2. Install Maven 3.6.0 or higher
+# 3. Run 'mvn clean install' to build the project
+# 4. Run 'java -jar target/edge-fog-computing-1.0-SNAPSHOT-jar-with-dependencies.jar' to execute
