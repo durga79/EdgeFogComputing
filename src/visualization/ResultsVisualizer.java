@@ -1,16 +1,5 @@
 package visualization;
 
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
-import javax.swing.*;
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Visualizes simulation results using JFreeChart
+ * Visualizes simulation results using console output
  */
 public class ResultsVisualizer {
     
@@ -63,128 +52,100 @@ public class ResultsVisualizer {
             System.out.println("Loaded " + timeSteps.size() + " data points from " + filePath);
             
         } catch (IOException e) {
-            System.err.println("Error loading data from CSV: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error reading CSV file: " + e.getMessage());
         }
     }
     
     /**
-     * Create service time comparison chart
-     * @return JFreeChart object
+     * Display service time comparison in console
      */
-    public JFreeChart createServiceTimeChart() {
-        XYSeriesCollection dataset = new XYSeriesCollection();
+    private void displayServiceTimeComparison() {
+        System.out.println("\n===== SERVICE TIME COMPARISON =====");
+        System.out.println("Time\tLocal Edge\tOther Edge\tCloud");
         
-        XYSeries localEdgeSeries = new XYSeries("Local Edge");
-        XYSeries otherEdgeSeries = new XYSeries("Other Edge");
-        XYSeries cloudSeries = new XYSeries("Cloud");
+        // Calculate averages for summary
+        double localEdgeAvg = 0;
+        double otherEdgeAvg = 0;
+        double cloudAvg = 0;
         
-        for (int i = 0; i < timeSteps.size(); i++) {
-            localEdgeSeries.add(timeSteps.get(i), localEdgeServiceTimes.get(i));
-            otherEdgeSeries.add(timeSteps.get(i), otherEdgeServiceTimes.get(i));
-            cloudSeries.add(timeSteps.get(i), cloudServiceTimes.get(i));
+        // Display data points (limited to avoid console spam)
+        int step = Math.max(1, timeSteps.size() / 10); // Show at most 10 data points
+        for (int i = 0; i < timeSteps.size(); i += step) {
+            System.out.printf("%.1f\t%.2f\t\t%.2f\t\t%.2f%n", 
+                timeSteps.get(i), 
+                localEdgeServiceTimes.get(i),
+                otherEdgeServiceTimes.get(i),
+                cloudServiceTimes.get(i));
+                
+            localEdgeAvg += localEdgeServiceTimes.get(i);
+            otherEdgeAvg += otherEdgeServiceTimes.get(i);
+            cloudAvg += cloudServiceTimes.get(i);
         }
         
-        dataset.addSeries(localEdgeSeries);
-        dataset.addSeries(otherEdgeSeries);
-        dataset.addSeries(cloudSeries);
-        
-        JFreeChart chart = ChartFactory.createXYLineChart(
-            "Service Time Comparison",
-            "Time Step",
-            "Service Time (ms)",
-            dataset,
-            PlotOrientation.VERTICAL,
-            true,
-            true,
-            false
-        );
-        
-        // Customize chart
-        XYPlot plot = chart.getXYPlot();
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        
-        // Set line colors
-        renderer.setSeriesPaint(0, Color.BLUE);
-        renderer.setSeriesPaint(1, Color.GREEN);
-        renderer.setSeriesPaint(2, Color.RED);
-        
-        // Show shapes at data points
-        renderer.setSeriesShapesVisible(0, true);
-        renderer.setSeriesShapesVisible(1, true);
-        renderer.setSeriesShapesVisible(2, true);
-        
-        plot.setRenderer(renderer);
-        
-        return chart;
+        // Display averages
+        if (!timeSteps.isEmpty()) {
+            localEdgeAvg /= timeSteps.size();
+            otherEdgeAvg /= timeSteps.size();
+            cloudAvg /= timeSteps.size();
+            
+            System.out.println("\nAVERAGES:");
+            System.out.printf("Local Edge: %.2f ms%n", localEdgeAvg);
+            System.out.printf("Other Edge: %.2f ms%n", otherEdgeAvg);
+            System.out.printf("Cloud: %.2f ms%n", cloudAvg);
+        }
     }
     
     /**
-     * Create resource utilization chart
-     * @return JFreeChart object
+     * Display utilization comparison in console
      */
-    public JFreeChart createUtilizationChart() {
-        XYSeriesCollection dataset = new XYSeriesCollection();
+    private void displayUtilizationComparison() {
+        System.out.println("\n===== RESOURCE UTILIZATION COMPARISON =====");
+        System.out.println("Time\tEdge Nodes\tCloud");
         
-        XYSeries edgeSeries = new XYSeries("Edge Nodes");
-        XYSeries cloudSeries = new XYSeries("Cloud");
+        // Calculate averages for summary
+        double edgeAvg = 0;
+        double cloudAvg = 0;
         
-        for (int i = 0; i < timeSteps.size(); i++) {
-            edgeSeries.add(timeSteps.get(i), edgeUtilizations.get(i));
-            cloudSeries.add(timeSteps.get(i), cloudUtilizations.get(i));
+        // Display data points (limited to avoid console spam)
+        int step = Math.max(1, timeSteps.size() / 10); // Show at most 10 data points
+        for (int i = 0; i < timeSteps.size(); i += step) {
+            System.out.printf("%.1f\t%.2f%%\t\t%.2f%%%n", 
+                timeSteps.get(i), 
+                edgeUtilizations.get(i),
+                cloudUtilizations.get(i));
+                
+            edgeAvg += edgeUtilizations.get(i);
+            cloudAvg += cloudUtilizations.get(i);
         }
         
-        dataset.addSeries(edgeSeries);
-        dataset.addSeries(cloudSeries);
-        
-        JFreeChart chart = ChartFactory.createXYLineChart(
-            "Resource Utilization",
-            "Time Step",
-            "CPU Utilization (%)",
-            dataset,
-            PlotOrientation.VERTICAL,
-            true,
-            true,
-            false
-        );
-        
-        // Customize chart
-        XYPlot plot = chart.getXYPlot();
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        
-        // Set line colors
-        renderer.setSeriesPaint(0, Color.BLUE);
-        renderer.setSeriesPaint(1, Color.RED);
-        
-        // Show shapes at data points
-        renderer.setSeriesShapesVisible(0, true);
-        renderer.setSeriesShapesVisible(1, true);
-        
-        plot.setRenderer(renderer);
-        
-        return chart;
+        // Display averages
+        if (!timeSteps.isEmpty()) {
+            edgeAvg /= timeSteps.size();
+            cloudAvg /= timeSteps.size();
+            
+            System.out.println("\nAVERAGE UTILIZATION:");
+            System.out.printf("Edge Nodes: %.2f%%%n", edgeAvg);
+            System.out.printf("Cloud: %.2f%%%n", cloudAvg);
+        }
     }
     
     /**
-     * Display charts in a frame
+     * Display all results in console
      */
-    public void displayCharts() {
-        JFrame frame = new JFrame("Edge-Fog Computing Simulation Results");
-        frame.setLayout(new GridLayout(2, 1));
-        frame.setSize(800, 600);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public void displayResults() {
+        System.out.println("\n========================================");
+        System.out.println("EDGE-FOG COMPUTING SIMULATION RESULTS");
+        System.out.println("========================================");
         
-        // Create service time chart
-        JFreeChart serviceTimeChart = createServiceTimeChart();
-        ChartPanel serviceTimePanel = new ChartPanel(serviceTimeChart);
-        frame.add(serviceTimePanel);
+        if (timeSteps.isEmpty()) {
+            System.out.println("No data available to display.");
+            return;
+        }
         
-        // Create utilization chart
-        JFreeChart utilizationChart = createUtilizationChart();
-        ChartPanel utilizationPanel = new ChartPanel(utilizationChart);
-        frame.add(utilizationPanel);
+        displayServiceTimeComparison();
+        displayUtilizationComparison();
         
-        frame.setVisible(true);
+        System.out.println("\n========================================");
     }
     
     /**
@@ -199,6 +160,6 @@ public class ResultsVisualizer {
         
         ResultsVisualizer visualizer = new ResultsVisualizer();
         visualizer.loadDataFromCSV(resultsFile);
-        visualizer.displayCharts();
+        visualizer.displayResults();
     }
 }
