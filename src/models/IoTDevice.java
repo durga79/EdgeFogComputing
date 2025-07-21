@@ -290,6 +290,14 @@ public class IoTDevice {
         return deviceId;
     }
     
+    /**
+     * Get the current location of the device
+     * @return The current location
+     */
+    public Location getLocation() {
+        return currentLocation;
+    }
+    
     public String getDeviceType() {
         return deviceType;
     }

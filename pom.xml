@@ -20,9 +20,22 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <!-- Maven Central repository -->
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <!-- Sonatype repository for CloudSim -->
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
+        <!-- Using stub implementations for CloudSim and iFogSim instead of external dependencies -->
+        <!-- No external dependencies needed for CloudSim and iFogSim as we're using stub implementations -->
+        
         <!-- JFuzzyLogic for implementing fuzzy logic controller -->
         <dependency>
             <groupId>com.github.fuzzylite</groupId>
@@ -54,6 +67,8 @@
     </dependencies>
 
     <build>
+        <finalName>edge-fog-computing-1.0</finalName>
+        <sourceDirectory>src</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

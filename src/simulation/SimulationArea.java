@@ -4,6 +4,9 @@ package simulation;
  * Represents the simulation area with boundaries for the simulation package
  */
 public class SimulationArea {
+    // Default dimensions for the simulation area
+    public static final double WIDTH = 1000.0;
+    public static final double HEIGHT = 1000.0;
     private double width;
     private double height;
     
