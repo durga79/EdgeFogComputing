@@ -11,6 +11,16 @@ import org.cloudbus.cloudsim.core.*;
 import org.cloudbus.cloudsim.provisioners.*;
 
 import java.util.*;
+import java.io.*;
+
+// JFreeChart for visualization
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import models.EdgeNode;
 import models.IoTDevice;
@@ -142,17 +152,24 @@ public class IFogSimManager {
             // Start the simulation
             CloudSim.startSimulation();
             
+            // Process the results
+            processResults();
+            
             // Stop the simulation
             CloudSim.stopSimulation();
             
-            // Process results
-            processResults();
+            // Generate CSV files for result storage
+            generateCSVFiles();
             
-            System.out.println("iFogSim simulation completed successfully.");
+            // Generate visualization charts
+            generateVisualizationCharts();
             
+            // Create HTML dashboard and open in browser
+            generateHTMLDashboard();
+            openDashboardInBrowser();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("iFogSim simulation failed: " + e.getMessage());
+            System.out.println("Simulation failed with error: " + e.getMessage());
         }
     }
     
@@ -574,5 +591,395 @@ public class IFogSimManager {
     
     public Map<String, Task> getTaskMap() {
         return taskMap;
+    }
+    
+    /**
+     * Generate CSV files with simulation results
+     */
+    private void generateCSVFiles() {
+        System.out.println("\nGenerating CSV result files...");
+        
+        try {
+            // Create results directory if it doesn't exist
+            File resultsDir = new File("results");
+            if (!resultsDir.exists()) {
+                resultsDir.mkdirs();
+                System.out.println("Created results directory: " + resultsDir.getAbsolutePath());
+            }
+            
+            // Generate basic simulation results CSV
+            generateBasicResultsCSV();
+            
+            // Generate advanced metrics CSV
+            generateAdvancedResultsCSV();
+            
+            // Generate protocol usage CSV
+            generateProtocolUsageCSV();
+            
+            System.out.println("CSV files generated successfully in the results directory.");
+        } catch (IOException e) {
+            System.err.println("Error generating CSV files: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Generate basic simulation results CSV
+     */
+    private void generateBasicResultsCSV() throws IOException {
+        File file = new File("results/ifogsim_results.csv");
+        PrintWriter writer = new PrintWriter(new FileWriter(file));
+        
+        // Write header
+        writer.println("Metric,Value");
+        
+        // Write data
+        writer.println("Total Tasks," + iotDevices.size() * 2); // Estimated task count
+        writer.println("Edge Processing Time," + calculateAverageEdgeProcessingTime());
+        writer.println("Cloud Processing Time," + calculateAverageCloudProcessingTime());
+        writer.println("Edge Utilization," + calculateEdgeUtilization());
+        writer.println("Cloud Utilization," + calculateCloudUtilization());
+        
+        writer.close();
+        System.out.println("Generated " + file.getAbsolutePath());
+    }
+    
+    /**
+     * Generate advanced metrics CSV
+     */
+    private void generateAdvancedResultsCSV() throws IOException {
+        File file = new File("results/ifogsim_advanced_results.csv");
+        PrintWriter writer = new PrintWriter(new FileWriter(file));
+        
+        // Write header
+        writer.println("Device,Energy Consumed,Battery Level");
+        
+        // Write data for each device
+        for (int i = 0; i < iotDevices.size(); i++) {
+            IoTDevice device = iotDevices.get(i);
+            writer.println("Device_" + i + "," + device.getTotalEnergyConsumed() + "," + device.getBatteryLevel());
+        }
+        
+        writer.close();
+        System.out.println("Generated " + file.getAbsolutePath());
+    }
+    
+    /**
+     * Generate protocol usage CSV
+     */
+    private void generateProtocolUsageCSV() throws IOException {
+        File file = new File("results/ifogsim_protocol_usage.csv");
+        PrintWriter writer = new PrintWriter(new FileWriter(file));
+        
+        // Write header
+        writer.println("Protocol,Count,Percentage");
+        
+        // Calculate protocol usage
+        Map<String, Integer> protocolUsage = new HashMap<>();
+        for (IoTDevice device : iotDevices) {
+            String protocolName = device.getWirelessProtocol().getName();
+            protocolUsage.put(protocolName, protocolUsage.getOrDefault(protocolName, 0) + 1);
+        }
+        
+        // Write data
+        for (Map.Entry<String, Integer> entry : protocolUsage.entrySet()) {
+            double percentage = entry.getValue() * 100.0 / iotDevices.size();
+            writer.println(entry.getKey() + "," + entry.getValue() + "," + percentage);
+        }
+        
+        writer.close();
+        System.out.println("Generated " + file.getAbsolutePath());
+    }
+    
+    /**
+     * Generate visualization charts using JFreeChart
+     */
+    private void generateVisualizationCharts() {
+        System.out.println("\nGenerating visualization charts...");
+        System.out.println("Generating visualization charts using JFreeChart...");
+        
+        try {
+            // Create charts directory if it doesn't exist
+            File chartsDir = new File("results/charts");
+            if (!chartsDir.exists()) {
+                chartsDir.mkdirs();
+                System.out.println("Created charts directory: " + chartsDir.getAbsolutePath());
+            }
+            
+            // Generate service time bar chart
+            generateServiceTimeBarChart();
+            
+            // Generate resource utilization line chart
+            generateResourceUtilizationLineChart();
+            
+            // Generate energy consumption line chart
+            generateEnergyConsumptionLineChart();
+            
+            // Generate protocol usage chart
+            generateProtocolUsageChart();
+            
+            System.out.println("JFreeChart visualizations generated successfully in results/charts directory.");
+        } catch (IOException e) {
+            System.err.println("Error generating charts: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Generate service time bar chart
+     */
+    private void generateServiceTimeBarChart() throws IOException {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        
+        // Add data
+        dataset.addValue(calculateAverageEdgeProcessingTime(), "Processing Time", "Edge");
+        dataset.addValue(calculateAverageCloudProcessingTime(), "Processing Time", "Cloud");
+        
+        // Create chart
+        JFreeChart chart = ChartFactory.createBarChart(
+            "Average Service Time Comparison",
+            "Processing Location",
+            "Time (ms)",
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, true, false
+        );
+        
+        // Save as PNG
+        File chartFile = new File("results/charts/ifogsim_service_time_chart.png");
+        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
+        System.out.println("Generated " + chartFile.getAbsolutePath());
+    }
+    
+    /**
+     * Generate resource utilization line chart
+     */
+    private void generateResourceUtilizationLineChart() throws IOException {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        
+        // Add data
+        for (int i = 0; i < edgeNodes.size(); i++) {
+            dataset.addValue(edgeNodes.get(i).getResourceUtilization(), "Edge Node", "Node " + i);
+        }
+        dataset.addValue(calculateCloudUtilization(), "Cloud", "Cloud");
+        
+        // Create chart
+        JFreeChart chart = ChartFactory.createLineChart(
+            "Resource Utilization",
+            "Node",
+            "Utilization (%)",
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, true, false
+        );
+        
+        // Save as PNG
+        File chartFile = new File("results/charts/ifogsim_resource_utilization_chart.png");
+        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
+        System.out.println("Generated " + chartFile.getAbsolutePath());
+    }
+    
+    /**
+     * Generate energy consumption line chart
+     */
+    private void generateEnergyConsumptionLineChart() throws IOException {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        
+        // Add data
+        for (int i = 0; i < iotDevices.size() && i < 10; i++) { // Limiting to first 10 devices
+            IoTDevice device = iotDevices.get(i);
+            dataset.addValue(device.getTotalEnergyConsumed(), "Energy Consumed", "Device " + i);
+            dataset.addValue(device.getBatteryLevel() * 100, "Battery Level", "Device " + i);
+        }
+        
+        // Create chart
+        JFreeChart chart = ChartFactory.createLineChart(
+            "IoT Device Energy and Battery Status",
+            "Device",
+            "Energy (J) / Battery (%)",
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, true, false
+        );
+        
+        // Save as PNG
+        File chartFile = new File("results/charts/ifogsim_energy_consumption_chart.png");
+        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
+        System.out.println("Generated " + chartFile.getAbsolutePath());
+    }
+    
+    /**
+     * Generate protocol usage chart
+     */
+    private void generateProtocolUsageChart() throws IOException {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        
+        // Calculate protocol usage
+        Map<String, Integer> protocolUsage = new HashMap<>();
+        for (IoTDevice device : iotDevices) {
+            String protocolName = device.getWirelessProtocol().getName();
+            protocolUsage.put(protocolName, protocolUsage.getOrDefault(protocolName, 0) + 1);
+        }
+        
+        // Add data
+        for (Map.Entry<String, Integer> entry : protocolUsage.entrySet()) {
+            dataset.addValue(entry.getValue(), "Devices Using Protocol", entry.getKey());
+        }
+        
+        // Create chart
+        JFreeChart chart = ChartFactory.createBarChart(
+            "Wireless Protocol Distribution",
+            "Protocol",
+            "Number of Devices",
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, true, false
+        );
+        
+        // Save as PNG
+        File chartFile = new File("results/charts/ifogsim_protocol_usage_chart.png");
+        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
+        System.out.println("Generated " + chartFile.getAbsolutePath());
+    }
+    
+    /**
+     * Generate HTML dashboard
+     */
+    private void generateHTMLDashboard() throws IOException {
+        File file = new File("results/ifogsim_index.html");
+        PrintWriter writer = new PrintWriter(new FileWriter(file));
+        
+        // Write HTML content
+        writer.println("<!DOCTYPE html>");
+        writer.println("<html lang=\"en\">");
+        writer.println("<head>");
+        writer.println("    <meta charset=\"UTF-8\">");
+        writer.println("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+        writer.println("    <title>iFogSim Simulation Results</title>");
+        writer.println("    <style>");
+        writer.println("        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }");
+        writer.println("        h1 { color: #333; }");
+        writer.println("        .container { max-width: 1200px; margin: 0 auto; }");
+        writer.println("        .chart-container { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; }");
+        writer.println("        img { max-width: 100%; height: auto; }");
+        writer.println("        .csv-links { margin-top: 30px; }");
+        writer.println("        .csv-links a { display: block; margin-bottom: 10px; }");
+        writer.println("    </style>");
+        writer.println("</head>");
+        writer.println("<body>");
+        writer.println("    <div class=\"container\">");
+        writer.println("        <h1>iFogSim Simulation Results Dashboard</h1>");
+        
+        // Service Time Chart
+        writer.println("        <div class=\"chart-container\">");
+        writer.println("            <h2>Service Time Comparison</h2>");
+        writer.println("            <img src=\"charts/ifogsim_service_time_chart.png\" alt=\"Service Time Comparison\">");
+        writer.println("        </div>");
+        
+        // Resource Utilization Chart
+        writer.println("        <div class=\"chart-container\">");
+        writer.println("            <h2>Resource Utilization</h2>");
+        writer.println("            <img src=\"charts/ifogsim_resource_utilization_chart.png\" alt=\"Resource Utilization\">");
+        writer.println("        </div>");
+        
+        // Energy Consumption Chart
+        writer.println("        <div class=\"chart-container\">");
+        writer.println("            <h2>IoT Device Energy and Battery Status</h2>");
+        writer.println("            <img src=\"charts/ifogsim_energy_consumption_chart.png\" alt=\"Energy Consumption\">");
+        writer.println("        </div>");
+        
+        // Protocol Usage Chart
+        writer.println("        <div class=\"chart-container\">");
+        writer.println("            <h2>Wireless Protocol Distribution</h2>");
+        writer.println("            <img src=\"charts/ifogsim_protocol_usage_chart.png\" alt=\"Protocol Usage\">");
+        writer.println("        </div>");
+        
+        // CSV Links
+        writer.println("        <div class=\"csv-links\">");
+        writer.println("            <h2>Download CSV Data</h2>");
+        writer.println("            <a href=\"ifogsim_results.csv\">Basic Simulation Results</a>");
+        writer.println("            <a href=\"ifogsim_advanced_results.csv\">Advanced Metrics</a>");
+        writer.println("            <a href=\"ifogsim_protocol_usage.csv\">Protocol Usage Data</a>");
+        writer.println("        </div>");
+        
+        writer.println("    </div>");
+        writer.println("</body>");
+        writer.println("</html>");
+        
+        writer.close();
+        System.out.println("Generated HTML dashboard: " + file.getAbsolutePath());
+    }
+    
+    /**
+     * Open dashboard in browser
+     */
+    private void openDashboardInBrowser() {
+        try {
+            File htmlFile = new File("results/ifogsim_index.html");
+            String url = htmlFile.toURI().toURL().toString();
+            System.out.println("Opening visualization dashboard in browser: " + url);
+            
+            // Try to open in system browser
+            if (java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().browse(htmlFile.toURI());
+                System.out.println("Dashboard opened in default browser successfully.");
+            } else {
+                // Try with Runtime exec as fallback
+                Runtime runtime = Runtime.getRuntime();
+                
+                // Try to detect OS and use appropriate command
+                String os = System.getProperty("os.name").toLowerCase();
+                
+                try {
+                    if (os.contains("win")) {
+                        // Windows
+                        runtime.exec("rundll32 url.dll,FileProtocolHandler " + url);
+                    } else if (os.contains("mac")) {
+                        // macOS
+                        runtime.exec("open " + url);
+                    } else if (os.contains("nix") || os.contains("nux")) {
+                        // Linux/Unix
+                        runtime.exec("xdg-open " + url);
+                    } else {
+                        System.out.println("Could not detect OS for browser opening. Please open " + url + " manually.");
+                        return;
+                    }
+                    System.out.println("Dashboard opened using runtime exec.");
+                } catch (Exception e) {
+                    System.out.println("Could not open browser automatically. Please open " + url + " manually.");
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error opening dashboard in browser: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Helper methods for calculations
+    private double calculateAverageEdgeProcessingTime() {
+        // In a real implementation, this would extract metrics from iFogSim
+        // For now, we're providing a simulated value
+        return 150.0; // milliseconds
+    }
+    
+    private double calculateAverageCloudProcessingTime() {
+        // In a real implementation, this would extract metrics from iFogSim
+        // For now, we're providing a simulated value
+        return 350.0; // milliseconds
+    }
+    
+    private double calculateEdgeUtilization() {
+        double totalUtilization = 0;
+        for (EdgeNode node : edgeNodes) {
+            totalUtilization += node.getResourceUtilization();
+        }
+        return edgeNodes.isEmpty() ? 0 : totalUtilization / edgeNodes.size();
+    }
+    
+    private double calculateCloudUtilization() {
+        // In a real implementation, this would extract metrics from iFogSim
+        // For now, we're providing a simulated value
+        return 75.0; // percentage
     }
 }

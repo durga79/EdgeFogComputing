@@ -395,6 +395,14 @@ public class EdgeNode {
     }
     
     /**
+     * Get the resource utilization of this edge node (alias for getCpuUtilization)
+     * @return The resource utilization as a percentage (0-100)
+     */
+    public double getResourceUtilization() {
+        return getCpuUtilization();
+    }
+    
+    /**
      * List of IoT devices connected to this edge node
      * This is a field that should be populated by the EdgeController
      */
