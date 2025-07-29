@@ -19,6 +19,8 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import visualization.DirectVisualization;
+
 import models.EdgeNode;
 import models.IoTDevice;
 import models.Task;
@@ -895,26 +897,12 @@ public class CloudSimManager {
      */
     private void generateAndDisplayCharts(List<Cloudlet> list) {
         try {
-            System.out.println("Generating visualization charts using JFreeChart...");
+            System.out.println("\nGenerating visualization charts using JFreeChart...");
             
-            // Create charts directory if it doesn't exist
-            File chartsDir = new File("results/charts");
-            if (!chartsDir.exists()) {
-                chartsDir.mkdirs();
-                System.out.println("Created charts directory: " + chartsDir.getAbsolutePath());
-            }
-            
-            // Generate charts from different CSV files
-            generateServiceTimeBarChart();
-            generateResourceUtilizationLineChart();
-            generateEnergyConsumptionChart();
-            generateProtocolUsageChart();
-            generateHtmlDashboard();
-            
-            System.out.println("JFreeChart visualizations generated successfully in results/charts directory.");
-            
-            // Open charts in system browser
-            openChartsInBrowser();
+            // Use the DirectVisualization class to generate charts that can be viewed directly in VSCode
+            String outputDir = DirectVisualization.generateCharts("CloudSim", "results");
+            System.out.println("Charts generated successfully. You can view them directly in VS Code.");
+            System.out.println("Chart directory: " + outputDir);
             
         } catch (Exception e) {
             System.err.println("Error generating JFreeChart visualizations: " + e.getMessage());
@@ -964,8 +952,6 @@ public class CloudSimManager {
         
         // Save as PNG
         File chartFile = new File("results/charts/service_time_chart.png");
-        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
-        System.out.println("Generated " + chartFile.getAbsolutePath());
     }
     
     /**
@@ -979,13 +965,20 @@ public class CloudSimManager {
             // Skip header
             String line = reader.readLine();
             
-            // Read all data points
+            // Sample only some points to avoid overcrowding
+            int sampleInterval = Math.max(1, (int)(simulationTime / 10)); // Sample 10 points
+            int counter = 0;
+            
+            // Read data points
             while ((line = reader.readLine()) != null) {
-                String[] values = line.split(",");
-                if (values.length >= 6) {
-                    String timeStep = values[0];
-                    dataset.addValue(Double.parseDouble(values[4]), "Edge Utilization", timeStep);
-                    dataset.addValue(Double.parseDouble(values[5]), "Cloud Utilization", timeStep);
+                counter++;
+                if (counter % sampleInterval == 0) {
+                    String[] values = line.split(",");
+                    if (values.length >= 6) {
+                        String timeStep = values[0];
+                        dataset.addValue(Double.parseDouble(values[4]), "Edge Utilization", timeStep);
+                        dataset.addValue(Double.parseDouble(values[5]), "Cloud Utilization", timeStep);
+                    }
                 }
             }
         }
@@ -1004,53 +997,6 @@ public class CloudSimManager {
         
         // Save as PNG
         File chartFile = new File("results/charts/resource_utilization_chart.png");
-        ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
-        System.out.println("Generated " + chartFile.getAbsolutePath());
-    }
-    
-    /**
-     * Generate line chart for energy consumption
-     */
-    private void generateEnergyConsumptionChart() throws IOException {
-        // Create dataset from advanced_results.csv
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader("results/advanced_results.csv"))) {
-            // Skip header
-            String line = reader.readLine();
-            
-            // Sample only some points to avoid overcrowding
-            int sampleInterval = (int)(simulationTime / 10); // Sample 10 points
-            int counter = 0;
-            
-            // Read data points
-            while ((line = reader.readLine()) != null) {
-                counter++;
-                if (counter % sampleInterval == 0) {
-                    String[] values = line.split(",");
-                    if (values.length >= 3) {
-                        String timeStep = values[0];
-                        dataset.addValue(Double.parseDouble(values[1]) / 1e6, "Edge Energy", timeStep);
-                        dataset.addValue(Double.parseDouble(values[2]) / 1e6, "Total System Energy", timeStep);
-                    }
-                }
-            }
-        }
-        
-        // Create chart
-        JFreeChart chart = ChartFactory.createLineChart(
-            "Energy Consumption Over Time",
-            "Simulation Time (s)",
-            "Energy (MJ)",
-            dataset,
-            PlotOrientation.VERTICAL,
-            true,
-            true,
-            false
-        );
-        
-        // Save as PNG
-        File chartFile = new File("results/charts/energy_consumption_chart.png");
         ChartUtils.saveChartAsPNG(chartFile, chart, 800, 600);
         System.out.println("Generated " + chartFile.getAbsolutePath());
     }

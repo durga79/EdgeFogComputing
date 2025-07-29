@@ -3,9 +3,13 @@ package ifogsim_integration;
 import org.fog.entities.*;
 import org.fog.application.*;
 import org.fog.placement.*;
-import org.fog.scheduler.*;
-import org.fog.utils.*;
+import java.util.Random;
+import java.util.Set;
+
 import org.cloudbus.cloudsim.core.CloudSim;
+
+import visualization.DirectVisualization;
+import org.fog.utils.DeterministicDistribution;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.*;
 import org.cloudbus.cloudsim.provisioners.*;
@@ -161,12 +165,12 @@ public class IFogSimManager {
             // Generate CSV files for result storage
             generateCSVFiles();
             
-            // Generate visualization charts
-            generateVisualizationCharts();
+            // Generate visualization charts using DirectVisualization
+            System.out.println("\nGenerating visualization charts using JFreeChart...");
+            String outputDir = DirectVisualization.generateCharts("IFogSim", "results");
+            System.out.println("Charts generated successfully. You can view them directly in VS Code.");
+            System.out.println("Chart directory: " + outputDir);
             
-            // Create HTML dashboard and open in browser
-            generateHTMLDashboard();
-            openDashboardInBrowser();
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Simulation failed with error: " + e.getMessage());
